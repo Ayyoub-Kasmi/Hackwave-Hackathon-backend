@@ -1,11 +1,10 @@
-const {createGroup,}=require('./groupController.js');
+const {createGroup} = require('./groupController.js');
 
 
 const router = require('express').Router();
 
 
-router.post('/create', createGroup);
-
+router.post('/', createGroup);
 
 
 module.exports = router;

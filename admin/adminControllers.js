@@ -1,105 +1,11 @@
-//importing prisma Client
-const jwt = require('jsonwebtoken');
 const prisma = require('../prisma/client.js');
 const bcrypt = require('bcrypt');
-// const emailTransporter = require('../nodemailer').transporter;
+const jwt = require('jsonwebtoken');
+const RandomString = require('randomstring');
+const { sendAccountEmail } = require('../utils/nodemailer.js');
 
-//Global constants
 const jwt_maxAge = 3 * 24 * 60 * 60; //3 days in seconds
 //register controlllers
-module.exports.get_register = async (req, res) => {
-    res.send("This is the Calm sign in page");
-}
-
-module.exports.createStudent = async (req, res) => {
-    try {
-
-        //get data from the request body
-        const {email, password , name ,major , gender , parent , group} = req.body;
-        
-        //checking if the email and password are given
-        if(!email) throw new Error('No email provided');
-        if(!password) throw new Error('No password provided');
-        if (!name) throw new Error('No name provided');
-        if (!major) throw new Error('No major provided');
-        if (!gender) throw new Error('No gender provided');
-        if (!parent) throw new Error('No parent provided');
-        const parentObj = await prisma.calm_users.findUnique({
-            where: {
-                email: parent
-            }
-        })
-        if (!parentObj) throw new Error('No parent provided');
-        if (!group) throw new Error('No group provided');
-        const groupObj = await prisma.calm_groups.findUnique({
-            where: {
-                 name: group
-            }
-        })
-        if (!groupObj) throw new Error('No group provided');
-
-
-
-
-    
-        
-        //checking the format of the email
-        if(!/^[A-Za-z0-9+_.-]+@(.+)$/.test(email)){
-            return res.status(422).json({
-                success: false,
-                message: "Invalid email format",
-                error: "Invalid email format",
-            })
-            
-        }
-        
-        //encrypt the password before creating the account using bcrypt
-        const salt = await bcrypt.genSalt();
-        const hashedPassword = await bcrypt.hash(password, salt);
-        
-        //saving the data into the database
-        const user = await prisma.calm_users.create({
-            data: {
-                email, password: hashedPassword,
-            }
-        });
-
-        //send the confirmation email to the user asynchronously
-     const token = await    jwt.sign({id: user.id}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "30d"} );
-            
-     res.cookie('jwt', `Bearer ${token}`, {
-        httpOnly: true,
-        maxAge: jwt_maxAge,
-        sameSite: 'none',
-        secure: true,
-    });
-user.password = undefined;
-     return res.status(201).json({
-
-            success: true,
-            message: 'Account created successfully',
-            data: {
-
-                ...user,
-            },
-        })
-
-    } catch (error) {
-        //send Error message
-        if(error.code === "P2002") {
-            return    res.status(400).json({
-                success: false,
-                message: "Email already exists",
-                error: error.message,
-            })
-            }
-
-      return  res.status(400).json({
-            success: false,
-            message: error.message,
-        })
-    }
-}
 
 //Login controllers
 module.exports.get_login = async (req, res) => {
@@ -116,33 +22,32 @@ module.exports.post_login = async (req, res) => {
         if(!password) throw new Error('No password provided');
 
         //search for the user in the database
-        const user = await prisma.calm_users.findUnique({
+        const admin = await prisma.admin.findUnique({
             where: {
-                email
+                email,
             }
         })
 
         //checking if there's an answer from the database
-        if(!user) throw new Error("Email doesn't exist");
+        if(!admin) throw new Error("Email doesn't exist");
 
         //user found, now checking the password
         //** Check if there's a way to declare static methods on the user schmea in prisma */
-        const auth = await bcrypt.compare(password, user.password);
+        const auth = await bcrypt.compare(password, admin.password);
         if(!auth) throw new Error('Incorrect password');
-
         
         //user successfully authenticated, now create the jwt token
-        const token = jwt.sign({username: user.username, email}, process.env.JWT_SECRET, {expiresIn: jwt_maxAge});
+        const token = jwt.sign({username: admin.username, email}, process.env.JWT_SECRET, {expiresIn: jwt_maxAge});
         res.cookie('jwt', token, { httpOnly: true, jwt_maxAge});
 
         //send the response
-        user.password = undefined;
+        admin.password = undefined;
 
-     return   res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'login successful',
             data: {
-                ...user,
+                ...admin,
             },
         })
 
@@ -153,7 +58,7 @@ module.exports.post_login = async (req, res) => {
         }
         
         //send Error message
-    return    res.status(404).json({
+        return res.status(404).json({
             success: false,
             message: error.message,
         })
@@ -185,21 +90,20 @@ module.exports.request_reset_password = async (req, res) => {
     try {
 
         //check if the user exists
-        const user_id = Number(req.params.userId);
-        const user = await prisma.calm_users.findUnique({
+        const { email } = req.body
+        const student = await prisma.student.findUnique({
             where: {
-                id: user_id,
+                email: student.email,
             }
         })
 
         //throw an error if the user does not exist
-        if(!user) throw new Error("User doesn't exist");
+        if(!student) throw new Error("User doesn't exist");
 
         //create the password reset link
-        
-        
+
         //create the password reset token
-        jwt.sign({id: user.id}, process.env.EMAIL_SECRET, {expiresIn: '2h'}, (err, resetToken) => {
+        jwt.sign({id: student.id}, process.env.EMAIL_SECRET, {expiresIn: '2h'}, (err, resetToken) => {
             
             if(err){
                 console.log(err);
@@ -296,7 +200,7 @@ module.exports.reset_password = async (req, res) => {
                         throw new Error("Internal server error, please contact the admins")
                     }
 
-                    await prisma.calm_users.update({
+                    await prisma.student.update({
                         where: {
                             id: decodedToken.id,
                         },
@@ -334,4 +238,142 @@ module.exports.post_logout = (req, res) => {
         message: "logout successful",
         data: {},
     })
+}
+
+
+module.exports.addAdmin = async (req, res) => {
+    try {
+
+        //get data from the request body
+        const {email , firstName, lastName, phone} = req.body;
+        
+        //checking if the email and password are given
+        if(!email) throw new Error('No email provided');
+        if (!firstName) throw new Error('No name provided');
+        if (!lastName) throw new Error('No name provided');
+    
+        //checking the format of the email
+        if(!/^[A-Za-z0-9+_.-]+@(.+)$/.test(email)){
+            return res.status(422).json({
+                success: false,
+                message: "Invalid email format",
+                error: "Invalid email format",
+            })
+        }
+        
+        //encrypt the password before creating the account using bcrypt
+        const initialPassword = RandomString.generate();
+        
+        //saving the data into the database
+        const user = await prisma.admin.create({
+            data: {
+                email, firstName, lastName, password: initialPassword,
+            }
+        });
+
+        sendAccountEmail(email, initialPassword, 'admins');
+
+        //send the confirmation email to the user asynchronously
+        const token = await jwt.sign({email: user.email}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "30d"} );
+                
+        res.cookie('jwt', `Bearer ${token}`, {
+            httpOnly: true,
+            maxAge: jwt_maxAge,
+            sameSite: 'none',
+            secure: true,
+        });
+
+        user.password = undefined;
+        return res.status(201).json({
+            success: true,
+            message: 'Account created successfully',
+            data: {
+                ...user,
+            },
+        })
+
+    } catch (error) {
+        //send Error message
+        if(error.code === "P2002") {
+            return    res.status(400).json({
+                success: false,
+                message: "Email already exists",
+                error: error.message,
+            })
+        }
+
+        return  res.status(400).json({
+            success: false,
+            message: error.message,
+        })
+    }
+}
+
+module.exports.addTeacher = async (req, res) => {
+    const { email, firstName, lastName, phone } = req.body;
+
+    if(!email) return res.status(400).json({ success: false, message: "No email provided" });
+    if(!name) return res.status(400).json({ success: false, message: "No name provided" });
+
+    const initialPassword = RandomString.generate();
+
+    try {
+        const teacher = await prisma.teacher.create({
+            data: {
+                email, firstName, lastName, phone, password: initialPassword
+            }
+        });
+
+        sendAccountEmail(email, initialPassword, 'teachers');
+
+        //send the confirmation email to the user asynchronously
+        const token = await jwt.sign({email: teacher.email}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "30d"});
+
+        res.cookie('jwt', `Bearer ${token}`, {
+            httpOnly: true,
+            maxAge: jwt_maxAge,
+            sameSite: 'none',
+            secure: true,
+        });
+
+        return res.status(201).json({
+            success: true,
+            message: "Teacher created successfully",
+            data: {
+                ...teacher
+            }
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        })
+    }
+}
+
+module.exports.deleteTeacher = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const teacher = await prisma.teacher.delete({
+            where: {
+                id: parseInt(id)
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Teacher deleted successfully",
+            data: {
+                ...teacher
+            }
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        })
+    }
 }

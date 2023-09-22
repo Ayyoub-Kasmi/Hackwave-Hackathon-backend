@@ -8,117 +8,116 @@ datasource db {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model public_Absence {
-  student_email  String         @db.VarChar(255)
-  public_Student public_Student @relation(fields: [student_email], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Absence_fk0")
+model Absence {
+  student_email String  @db.VarChar(255)
+  session_id    String  @db.VarChar(255)
+  justfication  String? @db.VarChar(255)
+  Student       Student @relation(fields: [student_email], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Absence_fk0")
+  Session       Session @relation(fields: [session_id], references: [UUID], onDelete: NoAction, onUpdate: NoAction, map: "Absence_fk1")
 
-  @@map("public.Absence")
-  @@ignore
+  @@id([student_email, session_id], map: "Absence_pk0")
 }
 
-model public_Document {
-  url            String         @id(map: "Document_pk") @db.VarChar(255)
-  name           String         @db.VarChar(255)
-  owner          String         @db.VarChar(255)
-  public_Student public_Student @relation(fields: [owner], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Document_fk0")
-
-  @@map("public.Document")
+model Document {
+  url     String  @id(map: "Document_pk") @db.VarChar(255)
+  name    String  @db.VarChar(255)
+  owner   String  @db.VarChar(255)
+  Student Student @relation(fields: [owner], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Document_fk0")
 }
 
-model public_Group {
-  name                 String                 @id(map: "Group_pk") @db.VarChar(255)
-  size                 Int                    @default(0)
-  public_Session       public_Session[]
-  public_Student       public_Student[]
-  public_Teacher_Group public_Teacher_Group[]
-
-  @@map("public.Group")
+model Group {
+  name          String          @id(map: "Group_pk") @db.VarChar(255)
+  size          Int             @default(0)
+  Session       Session[]
+  Student       Student[]
+  Teacher_Group Teacher_Group[]
 }
 
-model public_Parent {
-  email                 String                  @id(map: "Parent_pk") @db.VarChar(255)
-  name                  String                  @db.VarChar(255)
-  password              String                  @db.VarChar(255)
-  public_ParentDocument public_ParentDocument[]
-  public_Student        public_Student[]
-
-  @@map("public.Parent")
+model Parent {
+  email          String           @id(map: "Parent_pk") @db.VarChar(255)
+  name           String           @db.VarChar(255)
+  password       String           @db.VarChar(255)
+  ParentDocument ParentDocument[]
+  Student        Student[]
 }
 
-model public_ParentDocument {
-  url           String        @id(map: "ParentDocument_pk") @db.VarChar(255)
-  name          String        @db.VarChar(255)
-  owner         String        @db.VarChar(255)
-  public_Parent public_Parent @relation(fields: [owner], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "ParentDocument_fk0")
-
-  @@map("public.ParentDocument")
+model ParentDocument {
+  url    String @id(map: "ParentDocument_pk") @db.VarChar(255)
+  name   String @db.VarChar(255)
+  owner  String @db.VarChar(255)
+  Parent Parent @relation(fields: [owner], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "ParentDocument_fk0")
 }
 
-model public_Session {
-  group_id       String         @db.VarChar(255)
-  subject_id     String         @db.VarChar(255)
-  time           DateTime       @db.Timestamp(6)
-  room           String         @db.VarChar(255)
-  UUID           String         @db.VarChar(255)
-  public_Group   public_Group   @relation(fields: [group_id], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Session_fk0")
-  public_Subject public_Subject @relation(fields: [subject_id], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "Session_fk1")
+model Session {
+  group_id   String    @db.VarChar(255)
+  subject_id String    @db.VarChar(255)
+  time       DateTime  @db.Timestamp(6)
+  room       String    @db.VarChar(255)
+  UUID       String    @unique @db.VarChar(255)
+  Absence    Absence[]
+  Group      Group     @relation(fields: [group_id], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Session_fk0")
+  Subject    Subject   @relation(fields: [subject_id], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "Session_fk1")
 
   @@id([group_id, subject_id, time], map: "Session_pk")
-  @@map("public.Session")
 }
 
-model public_Student {
-  email           String            @id(map: "Student_pk") @db.VarChar(255)
-  name            String            @db.VarChar(255)
+model Student {
+  email     String     @id(map: "Student_pk") @db.VarChar(255)
+  firstName String     @db.VarChar(255)
+  password  String     @db.VarChar(255)
+  gender    String     @db.VarChar(255)
+  major     String     @db.VarChar(255)
+  parent    String     @db.VarChar(255)
+  group     String     @db.VarChar(255)
+  level     String?    @db.VarChar(255)
+  lastName  String?    @db.VarChar(255)
+  phone     String?    @db.VarChar(255)
+  Absence   Absence[]
+  Document  Document[]
+  Parent    Parent     @relation(fields: [parent], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk0")
+  Group     Group      @relation(fields: [group], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk1")
+}
+
+model Subject {
+  code            String            @id(map: "Subject_pk") @db.VarChar(255)
+  full_name       String            @db.VarChar(255)
+  level           String?           @db.VarChar(255)
+  Session         Session[]
+  Teacher_Subject Teacher_Subject[]
+}
+
+model Teacher {
+  email           String            @id(map: "Teacher_pk") @db.VarChar(255)
+  firstName       String            @db.VarChar(255)
   password        String            @db.VarChar(255)
-  gender          String            @db.VarChar(255)
-  major           String            @db.VarChar(255)
-  parent          String            @db.VarChar(255)
-  group           String            @db.VarChar(255)
-  public_Absence  public_Absence[]  @ignore
-  public_Document public_Document[]
-  public_Parent   public_Parent     @relation(fields: [parent], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk0")
-  public_Group    public_Group      @relation(fields: [group], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk1")
-
-  @@map("public.Student")
+  phone           String?           @db.VarChar(255)
+  lastname        String            @db.VarChar(255)
+  Teacher_Group   Teacher_Group[]
+  Teacher_Subject Teacher_Subject[]
 }
 
-model public_Subject {
-  code                   String                   @id(map: "Subject_pk") @db.VarChar(255)
-  full_name              String                   @db.VarChar(255)
-  public_Session         public_Session[]
-  public_Teacher_Subject public_Teacher_Subject[]
-
-  @@map("public.Subject")
-}
-
-model public_Teacher {
-  email                  String                   @id(map: "Teacher_pk") @db.VarChar(255)
-  name                   String                   @db.VarChar(255)
-  password               String                   @db.VarChar(255)
-  subject                String                   @db.VarChar(255)
-  public_Teacher_Group   public_Teacher_Group[]
-  public_Teacher_Subject public_Teacher_Subject[]
-
-  @@map("public.Teacher")
-}
-
-model public_Teacher_Group {
-  teacher_id     String         @db.VarChar(255)
-  group_id       String         @db.VarChar(255)
-  public_Teacher public_Teacher @relation(fields: [teacher_id], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Group_fk0")
-  public_Group   public_Group   @relation(fields: [group_id], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Group_fk1")
+model Teacher_Group {
+  teacher_id String  @db.VarChar(255)
+  group_id   String  @db.VarChar(255)
+  Teacher    Teacher @relation(fields: [teacher_id], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Group_fk0")
+  Group      Group   @relation(fields: [group_id], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Group_fk1")
 
   @@id([teacher_id, group_id], map: "Teacher_Group_pk")
-  @@map("public.Teacher_Group")
 }
 
-model public_Teacher_Subject {
-  subject_id     String         @db.VarChar(255)
-  teacher_id     String         @db.VarChar(255)
-  public_Subject public_Subject @relation(fields: [subject_id], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Subject_fk0")
-  public_Teacher public_Teacher @relation(fields: [teacher_id], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Subject_fk1")
+model Teacher_Subject {
+  subject_id String  @db.VarChar(255)
+  teacher_id String  @db.VarChar(255)
+  Subject    Subject @relation(fields: [subject_id], references: [code], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Subject_fk0")
+  Teacher    Teacher @relation(fields: [teacher_id], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Teacher_Subject_fk1")
 
   @@id([subject_id, teacher_id], map: "Teacher_Subject_pk")
-  @@map("public.Teacher_Subject")
+}
+
+model Admin {
+  email     String  @id(map: "Admin_pk") @db.VarChar(255)
+  firstName String  @db.VarChar(255)
+  password  String  @db.VarChar(255)
+  lastName  String  @db.VarChar(255)
+  phone     String? @db.VarChar(255)
 }
