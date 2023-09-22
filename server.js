@@ -7,6 +7,7 @@ const corsOptions = require('./config/corsOptions')
 const express = require('express');
 const app = express();
 
+
 /** Setup midleware */
 app.use(express.json());
 
@@ -15,19 +16,23 @@ app.use(cookieParser());
 
 app.use(cors(corsOptions));
 
-/** Routes */
-// const authRoutes = require('./auth/authRoutes');
-// const userRoutes = require('./user/userRoutes');
-// const threadRoutes = require('./threads/threadRoutes');
-// const answerRoutes = require('./routes/answerRoutes');
+/** @import */
+const authRoutes = require('./auth/authRoutes.js'); // make sure to rename this controller and routes to student routes 
+const groupRoutes = require('./group/groupRoutes.js');
+const parentRoutes = require('./parent/parentRoutes.js');
 
 app.get('/', (req, res) => {
     res.send("Welcome to the CSE Forums platform!");
 });
 
-// app.use(answerRoutes);
-// app.use('/user', userRoutes);
-// app.use('/threads', threadRoutes);
+
+/**  @Routes */
+
+
+
+app.use('/auth', authRoutes);
+app.use('/group', groupRoutes);
+app.use('/parent', parentRoutes);
 // app.use(authRoutes);
 
 

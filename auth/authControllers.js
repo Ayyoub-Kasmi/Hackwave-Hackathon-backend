@@ -1,30 +1,56 @@
 //importing prisma Client
 const jwt = require('jsonwebtoken');
-const prisma = require('../prisma/prismaClient');
+const prisma = require('../prisma/client.js');
 const bcrypt = require('bcrypt');
 // const emailTransporter = require('../nodemailer').transporter;
 
 //Global constants
-const jwt_maxAge = 1000 * 60 * 60 * 24; //1 day
-
+const jwt_maxAge = 3 * 24 * 60 * 60; //3 days in seconds
 //register controlllers
 module.exports.get_register = async (req, res) => {
     res.send("This is the Calm sign in page");
 }
 
-module.exports.post_register = async (req, res) => {
+module.exports.createStudent = async (req, res) => {
     try {
 
         //get data from the request body
-        const {email, password} = req.body;
+        const {email, password , name ,major , gender , parent , group} = req.body;
         
         //checking if the email and password are given
         if(!email) throw new Error('No email provided');
         if(!password) throw new Error('No password provided');
+        if (!name) throw new Error('No name provided');
+        if (!major) throw new Error('No major provided');
+        if (!gender) throw new Error('No gender provided');
+        if (!parent) throw new Error('No parent provided');
+        const parentObj = await prisma.calm_users.findUnique({
+            where: {
+                email: parent
+            }
+        })
+        if (!parentObj) throw new Error('No parent provided');
+        if (!group) throw new Error('No group provided');
+        const groupObj = await prisma.calm_groups.findUnique({
+            where: {
+                 name: group
+            }
+        })
+        if (!groupObj) throw new Error('No group provided');
+
+
+
+
+    
         
         //checking the format of the email
         if(!/^[A-Za-z0-9+_.-]+@(.+)$/.test(email)){
-            throw new Error('Invalid email format')
+            return res.status(422).json({
+                success: false,
+                message: "Invalid email format",
+                error: "Invalid email format",
+            })
+            
         }
         
         //encrypt the password before creating the account using bcrypt
@@ -39,34 +65,38 @@ module.exports.post_register = async (req, res) => {
         });
 
         //send the confirmation email to the user asynchronously
-        jwt.sign({id: user.id}, process.env.EMAIL_SECRET, {expiresIn: '2d'}, (err, emailToken) => {
-            if(err){
-                console.log(err);
-                throw new Error("Login token creation failed");
-            }
+     const token = await    jwt.sign({id: user.id}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: "30d"} );
             
-            //Send the response
-            res.status(200).json({
-                success: true,
-                message: 'register successful, check your email for verification',
-                // data: {
-                //     id: user.id,
-                //     email: user.email,
-                //     score: user.score,
-                // },
-                data: {}
-            });
-        });
+     res.cookie('jwt', `Bearer ${token}`, {
+        httpOnly: true,
+        maxAge: jwt_maxAge,
+        sameSite: 'none',
+        secure: true,
+    });
+user.password = undefined;
+     return res.status(201).json({
 
+            success: true,
+            message: 'Account created successfully',
+            data: {
+
+                ...user,
+            },
+        })
 
     } catch (error) {
         //send Error message
-        if(error.code === "P2002") error.message = "Email already registered";
+        if(error.code === "P2002") {
+            return    res.status(400).json({
+                success: false,
+                message: "Email already exists",
+                error: error.message,
+            })
+            }
 
-        res.status(400).json({
+      return  res.status(400).json({
             success: false,
             message: error.message,
-            data: {},
         })
     }
 }
@@ -84,7 +114,7 @@ module.exports.post_login = async (req, res) => {
         //checking if the email and password are given
         if(!email) throw new Error('No email provided');
         if(!password) throw new Error('No password provided');
-        
+
         //search for the user in the database
         const user = await prisma.calm_users.findUnique({
             where: {
@@ -106,14 +136,13 @@ module.exports.post_login = async (req, res) => {
         res.cookie('jwt', token, { httpOnly: true, jwt_maxAge});
 
         //send the response
-        res.status(200).json({
+        user.password = undefined;
+
+     return   res.status(200).json({
             success: true,
             message: 'login successful',
             data: {
-                id: user.id,
-                email: user.email,
-                score: user.score,
-                confirmed: user.confirmed,
+                ...user,
             },
         })
 
@@ -124,11 +153,31 @@ module.exports.post_login = async (req, res) => {
         }
         
         //send Error message
-        res.status(404).json({
+    return    res.status(404).json({
             success: false,
             message: error.message,
-            data: {},
         })
+    }
+}
+
+module.exports.userAuth = async (req, res) => {
+    try {
+        const user = req.user ;
+        return res.status(200).json({
+            success: true,
+            message: "User authenticated successfully",
+            data: {
+                ...user,
+            }
+        })
+
+        
+    } catch (error) {
+        res.status(401).json({
+            success: false,
+            message: "Unauthorized",
+        })
+        
     }
 }
 

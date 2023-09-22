@@ -4,6 +4,8 @@
   "description": "Backend server for the HackWave hackathon's solution project",
   "main": "server.js",
   "scripts": {
+    
+    "dev" : "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -30,5 +32,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.5.2",
     "prisma": "^5.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
   }
 }
