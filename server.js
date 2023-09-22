@@ -16,7 +16,7 @@ app.use(cookieParser());
 app.use(cors(corsOptions));
 
 /** Routes */
-const authRoutes = require('./auth/authRoutes');
+// const authRoutes = require('./auth/authRoutes');
 // const userRoutes = require('./user/userRoutes');
 // const threadRoutes = require('./threads/threadRoutes');
 // const answerRoutes = require('./routes/answerRoutes');
@@ -26,9 +26,9 @@ app.get('/', (req, res) => {
 });
 
 // app.use(answerRoutes);
-app.use('/user', userRoutes);
-app.use('/threads', threadRoutes);
-app.use(authRoutes);
+// app.use('/user', userRoutes);
+// app.use('/threads', threadRoutes);
+// app.use(authRoutes);
 
 
 /** Server */
