@@ -1,7 +1,8 @@
 /** Configure Environment variables */
 require('dotenv').config();
 const cors = require('cors');
-const corsOptions = require('./config/corsOptions')
+const { corsRESTOptions } = require('./config/corsOptions');
+const addChatSocket = require('./utils/addChatSocket');
 
 /** Initialize Express */
 const express = require('express');
@@ -13,7 +14,7 @@ app.use(express.json());
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
-app.use(cors(corsOptions));
+app.use(cors(corsRESTOptions));
 
 /** @import */
 const studentRoutes = require('./src/student/studentRoutes');
@@ -37,6 +38,8 @@ app.use('api/subjects', subjectRoutes);
 /** Server */
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+const server = addChatSocket(app);
+
+server.listen(PORT, () => {
     console.log(`Server listening on PORT: ${PORT}`);
 });

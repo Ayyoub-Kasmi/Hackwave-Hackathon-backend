@@ -120,7 +120,10 @@ module.exports.loginStudent = async (req, res) => {
         //user found, now checking the password
         //** Check if there's a way to declare static methods on the user schmea in prisma */
         const auth = await bcrypt.compare(password, student.password);
-        if(!auth) throw new Error('Incorrect password');
+        if(!auth) return res.status(401).json({
+            success: false,
+            message: "Incorrect password",
+        })
         
         //user successfully authenticated, now create the jwt token
         const token = jwt.sign({username: student.username, email}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: jwt_maxAge});
