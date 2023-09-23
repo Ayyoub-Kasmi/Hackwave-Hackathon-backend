@@ -1,8 +1,8 @@
-const prisma = require('../prisma/client.js');
+const prisma = require('../../prisma/client.js');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const RandomString = require('randomstring');
-const { sendAccountEmail } = require('../utils/nodemailer.js');
+const { sendAccountEmail } = require('../../utils/nodemailer.js');
 
 const jwt_maxAge = 3 * 24 * 60 * 60; //3 days in seconds
 //register controlllers

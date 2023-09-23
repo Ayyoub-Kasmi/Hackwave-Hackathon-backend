@@ -1,6 +1,6 @@
 //importing prisma Client
 const jwt = require('jsonwebtoken');
-const prisma = require('../prisma/client.js');
+const prisma = require('../../prisma/client.js');
 const bcrypt = require('bcrypt');
 // const emailTransporter = require('../nodemailer').transporter;
 
