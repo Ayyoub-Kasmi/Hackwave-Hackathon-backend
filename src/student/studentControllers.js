@@ -429,3 +429,42 @@ module.exports.getSubjects = async (req, res) => {
         })
     }
 }
+
+module.exports.getSkillAverage = async (req, res) => {
+    try {
+        const student = await prisma.student.findUnique({
+            where: {
+                email: req.params.email
+            }
+        })
+
+        if (!student) throw new Error('No student provided');
+
+        const skills = await prisma.skill.findMany({
+            where: {
+                major_id: student.major
+            }
+        })
+        
+        let average = 0;
+        skills.forEach(skill => {
+            average += skill.score;
+        });
+
+        average /= skills.length;
+
+        return res.status(200).json({
+            success: true,
+            message: "Average fetched successfully",
+            data: {
+                average
+            }
+        })
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message,
+        })
+    }
+}

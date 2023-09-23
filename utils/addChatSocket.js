@@ -75,7 +75,6 @@ function removeUser(id){
 
 function getUser(id){
     return users.find((user) => user.id === id);
-
 }
 
 function getUsersInRoom(room){

@@ -123,5 +123,12 @@ model Admin {
 
 model Major {
   name    String    @id(map: "Major_pk") @db.VarChar(255)
+  Skill   Skill[]
   Student Student[]
+}
+
+model Skill {
+  name     String  @id(map: "Skill_pk") @db.VarChar(255)
+  major_id String? @db.VarChar(255)
+  Major    Major?  @relation(fields: [major_id], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Skill_fk0")
 }
