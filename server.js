@@ -27,11 +27,11 @@ app.get('/', (req, res) => {
 });
 
 /**  @Routes */
-app.use('/students', studentRoutes);
-app.use('/teachers', teacherRoutes);
-app.use('/parents', parentRoutes);
-app.use('/groups', groupRoutes);
-app.use('/subjects', subjectRoutes);
+app.use('/api/students', studentRoutes);
+app.use('api/teachers', teacherRoutes);
+app.use('api/parents', parentRoutes);
+app.use('api/groups', groupRoutes);
+app.use('api/subjects', subjectRoutes);
 
 
 /** Server */

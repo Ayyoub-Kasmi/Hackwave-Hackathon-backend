@@ -99,7 +99,7 @@ module.exports.get_login = async (req, res) => {
     res.send("This is the Calm login page");
 }
 
-module.exports.post_login = async (req, res) => {
+module.exports.loginStudent = async (req, res) => {
     try {
         //get the email address
         const { email, password } = req.body;
@@ -117,15 +117,13 @@ module.exports.post_login = async (req, res) => {
 
         //checking if there's an answer from the database
         if(!student) throw new Error("Email doesn't exist");
-
         //user found, now checking the password
         //** Check if there's a way to declare static methods on the user schmea in prisma */
         const auth = await bcrypt.compare(password, student.password);
         if(!auth) throw new Error('Incorrect password');
-
         
         //user successfully authenticated, now create the jwt token
-        const token = jwt.sign({username: student.username, email}, process.env.JWT_SECRET, {expiresIn: jwt_maxAge});
+        const token = jwt.sign({username: student.username, email}, process.env.ACCESS_TOKEN_SECRET, {expiresIn: jwt_maxAge});
         res.cookie('jwt', token, { httpOnly: true, jwt_maxAge});
 
         //send the response
@@ -316,7 +314,7 @@ module.exports.reset_password = async (req, res) => {
     }
 }
 
-module.exports.post_logout = (req, res) => {
+module.exports.logoutStudent = (req, res) => {
     //set the cookie to '' and set a short expiry duration
     res.cookie('jwt', '', { maxAge: 1 });
 

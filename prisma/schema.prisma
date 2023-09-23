@@ -38,7 +38,6 @@ model Parent {
   name           String           @db.VarChar(255)
   password       String           @db.VarChar(255)
   ParentDocument ParentDocument[]
-  Student        Student[]
 }
 
 model ParentDocument {
@@ -67,15 +66,15 @@ model Student {
   password  String     @db.VarChar(255)
   gender    String     @db.VarChar(255)
   major     String     @db.VarChar(255)
-  parent    String     @db.VarChar(255)
+  parent    String?    @db.VarChar(255)
   group     String     @db.VarChar(255)
   level     String?    @db.VarChar(255)
   lastName  String?    @db.VarChar(255)
   phone     String?    @db.VarChar(255)
   Absence   Absence[]
   Document  Document[]
-  Parent    Parent     @relation(fields: [parent], references: [email], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk0")
   Group     Group      @relation(fields: [group], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk1")
+  Major     Major      @relation(fields: [major], references: [name], onDelete: NoAction, onUpdate: NoAction, map: "Student_fk2")
 }
 
 model Subject {
@@ -120,4 +119,9 @@ model Admin {
   password  String  @db.VarChar(255)
   lastName  String  @db.VarChar(255)
   phone     String? @db.VarChar(255)
+}
+
+model Major {
+  name    String    @id(map: "Major_pk") @db.VarChar(255)
+  Student Student[]
 }
